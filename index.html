@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1D9E75">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="部活トレ">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>部活トレーニング</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Meiryo',sans-serif;background:#f5f7f5;color:#1a1a1a;min-height:100vh;padding-bottom:80px;max-width:600px;margin:0 auto}
+
+/* ===== ボトムナビ ===== */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:#fff;border-top:1px solid #e0e0e0;display:flex;z-index:100}
+.nav-btn{flex:1;padding:10px 0 12px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:#999;font-size:11px;font-weight:600;-webkit-tap-highlight-color:transparent;transition:color 0.15s}
+.nav-btn.active{color:#1D9E75}
+.nav-btn i{font-size:22px}
+
+/* ===== ページ ===== */
+.page{display:none;padding:16px;padding-top:20px}
+.page.active{display:block}
+
+/* ===== トレーニングページ ===== */
+.header{text-align:center;margin-bottom:18px}
+.header h1{font-size:22px;font-weight:700;color:#1a1a1a;display:inline-flex;align-items:center;gap:8px}
+.header p{font-size:13px;color:#666;margin-top:4px}
+.timer-block{background:#fff;border-radius:18px;padding:22px 20px;text-align:center;margin-bottom:14px;border:1px solid #e0e0e0;box-shadow:0 2px 10px rgba(0,0,0,0.07)}
+.timer-display{font-size:58px;font-weight:700;color:#1a1a1a;letter-spacing:3px;font-variant-numeric:tabular-nums;font-family:'Courier New',monospace}
+.timer-label{font-size:14px;color:#666;margin-top:6px;min-height:20px;font-weight:500}
+.progress-bar-wrap{background:#e8e8e8;border-radius:4px;height:8px;margin-top:14px;overflow:hidden}
+.progress-bar{height:8px;background:#1D9E75;border-radius:4px;width:0%;transition:width 0.8s linear}
+.controls{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.btn{padding:11px 24px;border-radius:10px;border:1px solid #ccc;background:#fff;color:#1a1a1a;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;-webkit-tap-highlight-color:transparent}
+.btn:hover{background:#f0f0f0}
+.btn:active{transform:scale(0.97)}
+.btn-start{background:#1D9E75;border-color:#1D9E75;color:#fff;font-size:16px;padding:13px 36px}
+.btn-start:hover{background:#0F6E56;border-color:#0F6E56}
+.btn-start:disabled{background:#aaa;border-color:#aaa;cursor:default;transform:none}
+.total-info{display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:10px;padding:0 2px}
+.current-banner{background:#1D9E75;color:#fff;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;margin-bottom:10px;display:none}
+.menu-list{display:flex;flex-direction:column;gap:8px}
+.menu-item{border:1px solid #e0e0e0;border-radius:14px;padding:12px 16px;cursor:pointer;background:#fff;-webkit-tap-highlight-color:transparent}
+.menu-item.active{border-color:#1D9E75;background:#E1F5EE}
+.menu-item.done{opacity:0.5;background:#f8f8f8}
+.menu-item.done .item-name{text-decoration:line-through;color:#999}
+.item-header{display:flex;align-items:center;gap:10px}
+.item-num{font-size:12px;color:#aaa;min-width:18px;font-weight:700}
+.item-name{font-size:15px;font-weight:600;color:#1a1a1a;flex:1}
+.item-time{font-size:13px;color:#666;white-space:nowrap}
+.item-desc{font-size:13px;color:#555;margin-top:8px;line-height:1.65;padding-left:28px;display:none;border-top:1px solid #eee;padding-top:8px}
+.item-desc.open{display:block}
+.item-check{width:22px;height:22px;border-radius:50%;border:1.5px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent;flex-shrink:0;transition:all 0.2s}
+.menu-item.done .item-check{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.menu-item.active .item-check{border-color:#1D9E75;color:#1D9E75}
+
+/* 完了パネル */
+.done-panel{display:none;background:#fff;border-radius:18px;border:1px solid #e0e0e0;padding:24px 20px;margin-top:16px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.07)}
+.done-panel h2{font-size:26px;font-weight:700;margin-bottom:6px}
+.done-panel .done-sub{font-size:14px;color:#666;margin-bottom:16px}
+.done-streak{background:#E1F5EE;border-radius:12px;padding:14px;margin-top:8px}
+.done-streak .streak-num{font-size:40px;font-weight:700;color:#1D9E75;line-height:1}
+.done-streak .streak-label{font-size:13px;color:#1D9E75;margin-top:4px;font-weight:600}
+
+/* ===== プロフィールページ ===== */
+.profile-header{text-align:center;padding:24px 16px 16px}
+.profile-avatar{width:80px;height:80px;background:#1D9E75;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px}
+.profile-name-row{display:flex;align-items:center;justify-content:center;gap:8px}
+.profile-username{font-size:22px;font-weight:700;color:#1a1a1a}
+.btn-edit-name{background:none;border:1px solid #ccc;border-radius:8px;padding:4px 10px;font-size:12px;color:#666;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn-edit-name:active{background:#f0f0f0}
+.name-edit-row{display:none;margin-top:10px;justify-content:center;gap:8px}
+.name-edit-input{padding:8px 12px;border:1px solid #ccc;border-radius:10px;font-size:15px;width:180px;outline:none;font-family:inherit}
+.name-edit-input:focus{border-color:#1D9E75}
+.btn-name-save{padding:8px 16px;background:#1D9E75;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px;margin-top:4px}
+.stat-card{background:#fff;border-radius:16px;border:1px solid #e0e0e0;padding:18px 16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.stat-card .stat-icon{font-size:28px;margin-bottom:8px}
+.stat-card .stat-num{font-size:36px;font-weight:700;color:#1D9E75;line-height:1}
+.stat-card .stat-unit{font-size:13px;color:#1D9E75;font-weight:600}
+.stat-card .stat-label{font-size:12px;color:#888;margin-top:6px;font-weight:500}
+
+.history-section{padding:16px;margin-top:8px}
+.history-section h3{font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px}
+.history-list{display:flex;flex-direction:column;gap:6px}
+.history-item{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:13px}
+.history-item .hi-date{color:#666;flex:1}
+.history-item .hi-check{color:#1D9E75;font-weight:700;font-size:16px}
+.history-empty{font-size:13px;color:#aaa;text-align:center;padding:20px 0}
+
+.calendar-section{padding:0 16px;margin-top:4px}
+.calendar-section h3{font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day-label{font-size:10px;color:#aaa;text-align:center;padding-bottom:2px;font-weight:600}
+.cal-cell{aspect-ratio:1;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#aaa}
+.cal-cell.done{background:#1D9E75;color:#fff;font-weight:700}
+.cal-cell.today{outline:2px solid #1D9E75;outline-offset:-2px}
+.cal-cell.empty{background:transparent}
+</style>
+</head>
+<body>
+
+<!-- トレーニングページ -->
+<div class="page active" id="page-training">
+  <div class="header">
+    <h1>🏃 部活トレーニング</h1>
+    <p>開始ボタンを押してスタート ／ 各種目タップで説明表示</p>
+  </div>
+  <div class="timer-block">
+    <div class="timer-display" id="timerDisplay">00:00</div>
+    <div class="timer-label" id="timerLabel">準備中 — 開始ボタンを押してください</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="controls">
+      <button class="btn btn-start" id="startBtn" onclick="startPause()"><i class="ti ti-player-play"></i> 開始</button>
+      <button class="btn" onclick="resetAll()"><i class="ti ti-refresh"></i> リセット</button>
+    </div>
+  </div>
+  <div class="total-info">
+    <span id="progressText">0 / 10 完了</span>
+    <span id="totalTimeLeft">合計目安：約25分</span>
+  </div>
+  <div id="currentBanner" class="current-banner"></div>
+  <div class="menu-list" id="menuList"></div>
+  <div class="done-panel" id="donePanel">
+    <h2>🎉 お疲れ様！</h2>
+    <p class="done-sub">全メニュー完了！よく頑張りました。</p>
+    <div class="done-streak">
+      <div class="streak-num" id="doneStreakNum">0</div>
+      <div class="streak-label">🔥 日連続達成中！</div>
+    </div>
+  </div>
+</div>
+
+<!-- プロフィールページ -->
+<div class="page" id="page-profile">
+  <div class="profile-header">
+    <div class="profile-avatar">🏃</div>
+    <div class="profile-name-row">
+      <span class="profile-username" id="profileName">名前未設定</span>
+      <button class="btn-edit-name" onclick="toggleNameEdit()">編集</button>
+    </div>
+    <div class="name-edit-row" id="nameEditRow">
+      <input type="text" class="name-edit-input" id="nameEditInput" placeholder="名前を入力" maxlength="20">
+      <button class="btn-name-save" onclick="saveName()">保存</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-num" id="statCurrent">0</div>
+      <div class="stat-unit">日連続</div>
+      <div class="stat-label">現在のストリーク</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-num" id="statBest">0</div>
+      <div class="stat-unit">日連続</div>
+      <div class="stat-label">最高ストリーク</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-num" id="statTotal">0</div>
+      <div class="stat-unit">回</div>
+      <div class="stat-label">合計トレーニング</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏱️</div>
+      <div class="stat-num" id="statMinutes">0</div>
+      <div class="stat-unit">分</div>
+      <div class="stat-label">合計トレーニング時間</div>
+    </div>
+  </div>
+
+  <div class="calendar-section" style="margin-top:16px">
+    <h3>📆 今月の記録</h3>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <div class="history-section">
+    <h3>📋 最近の記録</h3>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<!-- ボトムナビ -->
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-training" onclick="switchPage('training')">
+    <i class="ti ti-run"></i>
+    <span>トレーニング</span>
+  </button>
+  <button class="nav-btn" id="nav-profile" onclick="switchPage('profile')">
+    <i class="ti ti-user-circle"></i>
+    <span>プロフィール</span>
+  </button>
+</div>
+
+<script>
+const MENUS = [
+  {name:"ラウンジ（ランジ）",time:120,desc:"前後に足を大きく踏み出し、膝を90°に曲げる。体幹はまっすぐキープ。左右各10〜15回 × 2セット。"},
+  {name:"体幹トレーニング（7種目）",time:600,desc:"① プランク 60秒 → ② サイドプランク左右 各30秒 → ③ 片足上げ左右 各30秒 → ④ 仰向け片足上げ 各30秒 → ⑤ 片手片足プランク 各30秒 → ⑥ 肘伸ばしプランク 30秒 → ⑦ マウンテンクライマー 30秒。体が一直線になるよう意識！"},
+  {name:"指立て伏せ",time:60,desc:"手のひらではなく指先だけで床をつく腕立て伏せ。10回 × 2〜3セット。指強化のためゆっくり丁寧に。"},
+  {name:"腹筋",time:90,desc:"仰向けで膝を立て、両手を頭の後ろに。へそを見るように上体を起こす。反動を使わず腹筋の力だけで30回 × 2セット。"},
+  {name:"背筋",time:90,desc:"うつ伏せで両手を頭の後ろ。上体をゆっくり持ち上げる。腰を反りすぎず、30回 × 2セット。"},
+  {name:"スクワット",time:90,desc:"肩幅に足を開き、つま先を少し外向きに。膝がつま先より前に出ないよう、お尻を後ろに引きながら30回 × 2セット。"},
+  {name:"ジャンプスクワット",time:90,desc:"通常のスクワットから素早く立ち上がりジャンプ！着地はクッションを効かせて静かに。15〜20回 × 2セット。"},
+  {name:"ランジスクワット",time:90,desc:"足を肩幅より広めに開いてワイドスタンスでスクワット。股関節の柔軟性も高まる。20回 × 2セット。"},
+  {name:"バービー（5種目）",time:150,desc:"① 立つ → ② しゃがむ → ③ 両手を床につく → ④ 足を後ろに伸ばしプランク姿勢 → ⑤ 腕立て1回 → 戻る。全力で10回 × 2セット！"},
+  {name:"ダッシュ・ランニング",time:300,desc:"短距離ダッシュ（20〜30m × 5〜8本）またはペース走。最後にジョグでクールダウンも忘れずに。"},
+];
+const TOTAL_MINUTES = Math.round(MENUS.reduce((a,m)=>a+m.time,0)/60);
+
+// ===== ストレージ =====
+function getRecords(){return JSON.parse(localStorage.getItem('bukatsu_records')||'[]')}
+function saveRecords(r){localStorage.setItem('bukatsu_records',JSON.stringify(r))}
+function todayStr(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+
+function calcStreak(records){
+  if(!records.length) return {current:0,best:0};
+  const days=[...new Set(records.map(r=>r.date))].sort().reverse();
+  let current=0,best=0,streak=0;
+  const today=todayStr();
+  const yesterday=new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yStr=`${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+  if(days[0]===today||days[0]===yStr){
+    let prev=null;
+    for(const d of days){
+      if(!prev){streak=1;}
+      else{
+        const diff=(new Date(prev)-new Date(d))/(1000*60*60*24);
+        if(diff===1) streak++;
+        else break;
+      }
+      prev=d;
+    }
+    current=streak;
+  }
+  // best
+  let s=1,prev2=null;
+  for(const d of [...days].reverse()){
+    if(!prev2){s=1;}
+    else{
+      const diff=(new Date(d)-new Date(prev2))/(1000*60*60*24);
+      if(diff===1) s++;
+      else s=1;
+    }
+    if(s>best) best=s;
+    prev2=d;
+  }
+  return {current,best};
+}
+
+function recordToday(){
+  const records=getRecords();
+  const today=todayStr();
+  if(records.find(r=>r.date===today)) return; // 1日1回
+  records.push({date:today,time:new Date().toISOString()});
+  saveRecords(records);
+}
+
+// ===== ページ切替 =====
+function switchPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if(name==='profile') renderProfile();
+}
+
+// ===== プロフィール =====
+function toggleNameEdit(){
+  const row=document.getElementById('nameEditRow');
+  const showing=row.style.display==='flex';
+  row.style.display=showing?'none':'flex';
+  if(!showing) document.getElementById('nameEditInput').value=localStorage.getItem('bukatsu_name')||'';
+}
+function saveName(){
+  const val=document.getElementById('nameEditInput').value.trim();
+  if(!val) return;
+  localStorage.setItem('bukatsu_name',val);
+  document.getElementById('profileName').textContent=val;
+  document.getElementById('nameEditRow').style.display='none';
+}
+
+function renderProfile(){
+  const name=localStorage.getItem('bukatsu_name')||'名前未設定';
+  document.getElementById('profileName').textContent=name;
+  const records=getRecords();
+  const {current,best}=calcStreak(records);
+  document.getElementById('statCurrent').textContent=current;
+  document.getElementById('statBest').textContent=best;
+  document.getElementById('statTotal').textContent=records.length;
+  document.getElementById('statMinutes').textContent=records.length*TOTAL_MINUTES;
+  renderCalendar(records);
+  renderHistory(records);
+}
+
+function renderCalendar(records){
+  const doneDays=new Set(records.map(r=>r.date));
+  const today=new Date();
+  const year=today.getFullYear(), month=today.getMonth();
+  const firstDay=new Date(year,month,1).getDay();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const grid=document.getElementById('calGrid');
+  const labels=['日','月','火','水','木','金','土'];
+  let html=labels.map(l=>`<div class="cal-day-label">${l}</div>`).join('');
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-cell empty"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isDone=doneDays.has(ds);
+    const isToday=d===today.getDate();
+    html+=`<div class="cal-cell${isDone?' done':''}${isToday?' today':''}">${d}</div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function renderHistory(records){
+  const el=document.getElementById('historyList');
+  if(!records.length){el.innerHTML='<div class="history-empty">まだ記録がありません</div>';return;}
+  const sorted=[...records].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
+  el.innerHTML=sorted.map(r=>{
+    const d=new Date(r.time);
+    const timeStr=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `<div class="history-item"><span class="hi-check">✓</span><span class="hi-date">${r.date.replace(/-/g,'/')}　${timeStr}完了</span></div>`;
+  }).join('');
+}
+
+// ===== タイマー =====
+let currentIdx=-1,running=false,timeLeft=0,interval=null,started=false;
+function pad(n){return String(n).padStart(2,'0')}
+function secToMin(s){return pad(Math.floor(s/60))+':'+pad(s%60)}
+
+function renderList(){
+  document.getElementById('menuList').innerHTML=MENUS.map((m,i)=>{
+    let cls=i<currentIdx?'done':(i===currentIdx?'active':'');
+    let check=i<currentIdx?'✓':(i===currentIdx?'▶':'');
+    return `<div class="menu-item ${cls}" id="item${i}" onclick="toggleDesc(${i})">
+      <div class="item-header">
+        <span class="item-num">${i+1}</span>
+        <span class="item-name">${m.name}</span>
+        <span class="item-time"><i class="ti ti-clock"></i> ${secToMin(m.time)}</span>
+        <div class="item-check">${check}</div>
+      </div>
+      <div class="item-desc" id="desc${i}">${m.desc}</div>
+    </div>`;
+  }).join('');
+}
+function toggleDesc(i){document.getElementById('desc'+i).classList.toggle('open')}
+
+function updateTimer(){
+  document.getElementById('timerDisplay').textContent=secToMin(timeLeft);
+  if(currentIdx>=0&&currentIdx<MENUS.length){
+    const total=MENUS[currentIdx].time;
+    document.getElementById('progressBar').style.width=((total-timeLeft)/total*100).toFixed(1)+'%';
+  }
+}
+function updateProgress(){
+  const done=currentIdx<0?0:currentIdx;
+  const remaining=MENUS.slice(Math.max(0,currentIdx)).reduce((a,m,i)=>a+(i===0?timeLeft:m.time),0);
+  document.getElementById('progressText').textContent=(done<0?0:done)+' / '+MENUS.length+' 完了';
+  document.getElementById('totalTimeLeft').textContent='残り目安：'+secToMin(Math.max(0,remaining));
+}
+
+function startMenu(idx){
+  if(idx>=MENUS.length){
+    clearInterval(interval); running=false;
+    recordToday();
+    const {current}=calcStreak(getRecords());
+    document.getElementById('timerDisplay').textContent='完了！';
+    document.getElementById('timerLabel').textContent='お疲れ様でした！';
+    document.getElementById('progressBar').style.width='100%';
+    document.getElementById('startBtn').disabled=true;
+    document.getElementById('startBtn').innerHTML='<i class="ti ti-check"></i> 完了';
+    document.getElementById('currentBanner').style.display='none';
+    document.getElementById('progressText').textContent=MENUS.length+' / '+MENUS.length+' 完了';
+    document.getElementById('totalTimeLeft').textContent='残り：00:00';
+    document.getElementById('doneStreakNum').textContent=current;
+    const panel=document.getElementById('donePanel');
+    panel.style.display='block';
+    panel.scrollIntoView({behavior:'smooth',block:'start'});
+    renderList(); return;
+  }
+  currentIdx=idx; timeLeft=MENUS[idx].time;
+  document.getElementById('timerLabel').textContent='▶ '+MENUS[idx].name;
+  const b=document.getElementById('currentBanner');
+  b.style.display='block';
+  b.textContent='今のメニュー：'+MENUS[idx].name+'（'+secToMin(MENUS[idx].time)+'）';
+  document.getElementById('desc'+idx).classList.add('open');
+  updateTimer(); updateProgress(); renderList();
+  const el=document.getElementById('item'+idx);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function tick(){
+  if(timeLeft>0){timeLeft--;updateTimer();updateProgress();}
+  else{startMenu(currentIdx+1);}
+}
+function startPause(){
+  if(!started){
+    started=true; startMenu(0); running=true;
+    interval=setInterval(tick,1000);
+    document.getElementById('startBtn').innerHTML='<i class="ti ti-player-pause"></i> 一時停止';
+    return;
+  }
+  if(running){
+    clearInterval(interval);running=false;
+    document.getElementById('startBtn').innerHTML='<i class="ti ti-player-play"></i> 再開';
+  } else {
+    interval=setInterval(tick,1000);running=true;
+    document.getElementById('startBtn').innerHTML='<i class="ti ti-player-pause"></i> 一時停止';
+  }
+}
+function resetAll(){
+  clearInterval(interval);running=false;started=false;currentIdx=-1;timeLeft=0;
+  document.getElementById('timerDisplay').textContent='00:00';
+  document.getElementById('timerLabel').textContent='準備中 — 開始ボタンを押してください';
+  document.getElementById('progressBar').style.width='0%';
+  document.getElementById('startBtn').innerHTML='<i class="ti ti-player-play"></i> 開始';
+  document.getElementById('startBtn').disabled=false;
+  document.getElementById('currentBanner').style.display='none';
+  document.getElementById('donePanel').style.display='none';
+  document.getElementById('progressText').textContent='0 / 10 完了';
+  document.getElementById('totalTimeLeft').textContent='合計目安：約25分';
+  renderList();
+}
+
+// ===== 初期化 =====
+window.addEventListener('DOMContentLoaded',()=>{
+  renderList();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').catch(e=>console.log('SW error',e));
+  }
+});
+</script>
+</body>
+</html>
